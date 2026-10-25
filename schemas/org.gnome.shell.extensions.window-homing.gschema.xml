@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.window-homing"
+          path="/org/gnome/shell/extensions/window-homing/">
+    <key name="rules" type="a(sssi)">
+      <default>[]</default>
+      <summary>Where windows go</summary>
+      <description>
+        One rule per entry: (application, match, text, workspace).
+        The application is a desktop file id such as 'google-chrome.desktop'; for
+        windows the shell matches to no application, their window class. The match
+        is 'any' (every window of the application), 'is' (the window title is the
+        text), 'contains' (the title contains the text) or 'matches' (the title
+        matches the text as a JavaScript regular expression); case does not matter.
+        The workspace counts from 1.
+        A window opening is moved by the most specific rule that matches it: 'is'
+        before 'matches' before 'contains' before 'any', and in list order among
+        equals. Rules with an unknown match, an empty text, an invalid regular
+        expression or a workspace outside 1-36 are ignored.
+      </description>
+    </key>
+    <key name="home-request" type="x">
+      <default>0</default>
+      <summary>Send open windows home</summary>
+      <description>
+        Written by the settings window, any new value asks the extension to apply the
+        rules to the windows already open.
+      </description>
+    </key>
+  </schema>
+</schemalist>
