@@ -6,6 +6,7 @@ import Shell from 'gi://Shell';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 import {
     HOME_REQUEST_KEY, MATCHES, RULES_KEY, compileRule, normalizeAppId, unpackRules,
@@ -68,8 +69,18 @@ export default class WindowHomingExtension extends Extension {
 
         // Window -> settle timeout of the windows still being watched.
         this._waiting = new Map();
-        global.display.connectObject('window-created',
-            (display, window) => this._watch(window), this);
+        // Window -> notification source of the windows moved out of sight.
+        this._notices = new Map();
+        global.display.connectObject(
+            'window-created', (display, window) => this._watch(window),
+            // The shell says "“title” is ready" for a new window opened on
+            // another workspace: with a notice of its own here, that would
+            // be the second notification for the same window.
+            'window-demands-attention', (display, window) => {
+                if (this._notices.has(window))
+                    window.unset_demands_attention();
+            },
+            this);
 
         // At login the extension starts before any window opens. Enabled at
         // any other time, e.g. when the screen unlocks, it leaves the open
@@ -82,6 +93,9 @@ export default class WindowHomingExtension extends Extension {
         for (const window of this._waiting.keys())
             this._unwatch(window);
         this._waiting = null;
+        for (const source of this._notices.values())
+            source.destroy();
+        this._notices = null;
         global.display.disconnectObject(this);
         this._settings.disconnectObject(this);
         this._settings = null;
@@ -133,8 +147,41 @@ export default class WindowHomingExtension extends Extension {
             } finally {
                 this._moving = false;
             }
+            this._notify(window);
         }
         return rule;
+    }
+
+    // A window moved out of sight would seem to vanish: a notification says
+    // where it went and, clicked, takes there. One source per window, as the
+    // shell does for windows asking for attention: a source keeps only its
+    // latest notifications (three in GNOME 46).
+    _notify(window) {
+        this._notices.get(window)?.destroy();
+        const workspace = window.get_workspace();
+        if (workspace === global.workspace_manager.get_active_workspace())
+            return;
+
+        const app = Shell.WindowTracker.get_default().get_window_app(window);
+        const source = new MessageTray.Source({title: app.get_name(), icon: app.get_icon()});
+        const notification = new MessageTray.Notification({
+            source,
+            // A rule for any window of an application may move one still
+            // without a title.
+            title: window.get_title() || app.get_name(),
+            body: `Moved to workspace ${workspace.index() + 1}`,
+        });
+        notification.connect('activated', () => Main.activateWindow(window));
+        source.connect('destroy', () => this._notices.delete(window));
+        window.connectObject(
+            'focus', () => source.destroy(),
+            'unmanaged', () => source.destroy(),
+            source);
+        this._notices.set(window, source);
+        Main.messageTray.add(source);
+        source.addNotification(notification);
+        if (window.demands_attention)
+            window.unset_demands_attention();
     }
 
     // Applies the rules now and, unless a title matched exactly, again on

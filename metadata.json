@@ -2,7 +2,7 @@
   "uuid": "window-homing@amsis.github.io",
   "name": "Window Homing",
   "description": "Sends every window to its own workspace, following rules you write: a browser window by the name you gave it, an editor window by the project it has open.\n\nA window is moved when it opens, or in the next few seconds if its final title comes late, also at login; if you move it later, it stays where you put it. Rules are written in the settings window, or with gsettings.",
-  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "shell-version": ["46", "47", "48", "49", "50"],
   "url": "https://github.com/amsis/gnome-shell-extension-window-homing",
   "settings-schema": "org.gnome.shell.extensions.window-homing",
   "version-name": "0.1.0"

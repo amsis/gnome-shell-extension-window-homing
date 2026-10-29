@@ -18,7 +18,8 @@ and Chrome keeps it across restarts; VS Code puts the project folder in its titl
 after the open file if there is one, so `(^| - )my-project - ` finds it either
 way. A window is moved when it opens, or in the next few seconds if its final
 title comes late, so the windows restored at login go home too; move one by hand
-later and it stays where you put it. Works with GNOME Shell 45 to 50.
+later and it stays where you put it. A window moved out of sight comes with
+a notification; click it to go to the window. Works with GNOME Shell 46 to 50.
 
 ## Installation
 
